@@ -74,12 +74,12 @@ const closeEditGameModal = () => {
 
 const submitNewGame = async () => {
     try {
-        // Ensure genres is an array
+
         if (typeof newGame.value.genres === 'string') {
             newGame.value.genres = newGame.value.genres
                 .split(',')
                 .map(g => g.trim())
-                .filter(Boolean); // removes empty values
+                .filter(Boolean);
         }
 
         const response = await axios.post('http://localhost:5000/api/games', newGame.value)

@@ -236,19 +236,37 @@
 
 <script setup>
 
-import {onMounted, ref} from "vue";
+import {onMounted, onUnmounted, ref} from "vue";
 import axios from "axios";
+import io from 'socket.io-client'
+const socket = io('http://localhost:5000');
 
-onMounted(async () => {
-  try {
-    const response = await axios.get('http://localhost:5000/api/games')
-    games.value = response.data
-    originalGames.value = response.data
-  } catch (error) {
-    console.error("Error fetching games:", error)
-  } finally {
-    loading.value = false
-  }
+
+onMounted(() => {
+
+  fetchGames();
+
+  socket.on('connect', () => {
+    console.log('Socket connected!', socket.id);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Socket disconnected');
+  });
+
+  socket.on('gameAdded', () => {fetchGames();});
+
+  socket.on('gameUpdated', () => {fetchGames();});
+
+  socket.on('gameDeleted', () => {fetchGames();});
+})
+
+onUnmounted(() => {
+
+    socket.off('gameAdded');
+    socket.off('gameUpdated');
+    socket.off('gameDeleted');
+
 })
 
 import {
@@ -276,11 +294,24 @@ import {
   getRatingColor
 
 } from '@/gamesScripts'
+import {useEffect} from "react";
 
 const devPubStats = ref([])
 const showingStats = ref(false)
 const selectedStats = ref('');
 const isAdmin = (localStorage.getItem('user_status') === 'true')
+
+const fetchGames = async () => {
+  try {
+    const response = await axios.get('http://localhost:5000/api/games')
+    games.value = response.data
+    originalGames.value = response.data
+  } catch (error) {
+    console.error("Error fetching games:", error)
+  } finally {
+    loading.value = false
+  }
+}
 
 const toggleStats = async () => {
 
@@ -303,7 +334,7 @@ const fetchDevPubStats = async (type) => {
     const url = `http://localhost:5000/api/stats/${type}`;
     const response = await axios.get(url);
     devPubStats.value = response.data;
-    console.log(devPubStats.value); // Check the response data in the console
+    console.log(devPubStats.value);
   } catch (error) {
     console.error(`Error fetching ${type} stats:`, error);
   } finally {

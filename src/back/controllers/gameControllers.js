@@ -22,11 +22,9 @@ class GamesController {
 
     static async createGame(req, res) {
         try {
-
-            
-            
-
             const newGame = await GamesDAO.createGame(req.body);
+
+            req.app.io.emit('gameAdded', newGame);
             res.status(201).json(newGame);
         } catch (err) {
             res.status(400).json({ error: err.message });
@@ -54,6 +52,7 @@ class GamesController {
     static async updateGame(req, res) {
         try {
             const updatedGame = await GamesDAO.updateGame(req.params.id, req.body);
+            req.app.io.emit('gameUpdated', updatedGame)
             if (!updatedGame) return res.status(404).json({ message: "Game not found" });
             res.json(updatedGame);
         } catch (err) {
@@ -124,7 +123,8 @@ class GamesController {
         try {
             const deletedGame = await GamesDAO.deleteGame(req.params.id);
             if (!deletedGame) return res.status(404).json({ message: "Game not found" });
-            res.json({ message: "DELETED" });
+            req.app.io.emit('gameDeleted', deletedGame);
+            res.json(deletedGame);
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
